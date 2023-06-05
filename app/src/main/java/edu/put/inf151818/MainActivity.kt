@@ -19,12 +19,17 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.HttpURLConnection
 import java.net.URL
+import android.content.Context
+import android.content.SharedPreferences
+import java.text.SimpleDateFormat
+import java.util.concurrent.TimeUnit
+
 
 class MainActivity : AppCompatActivity() {
     private lateinit var editText: EditText
     private lateinit var button: Button
     private lateinit var textView: TextView
-
+    private lateinit var sharedPreferences: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -33,12 +38,37 @@ class MainActivity : AppCompatActivity() {
         button = findViewById(R.id.button)
         textView = findViewById(R.id.textView)
 
+        sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+        val dateStr = sharedPreferences.getString("currentDateStr", "")
+
+        if (dateStr != null) {
+            val format = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+            val currentDate = Date() // Get the current date and time
+            val currentDateStr = format.format(currentDate)
+
+            try {
+                val lastSyncDate = format.parse(dateStr)
+                val diffInMilliseconds = currentDate.time - lastSyncDate.time
+                val diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMilliseconds)
+
+                if (diffInHours < 24) {
+                    textView.text = "Time difference is less than 24 hours"
+                    //val intent = Intent(this@MainActivity, ProfileActivity::class.java)
+                    //startActivity(intent)
+                    //finish() // Add this line to prevent going back to MainActivity when pressing the back button
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+
         button.setOnClickListener {
             val username = editText.text.toString()
             FetchDataTask().execute(username)
-
         }
     }
+
+
 
     private inner class FetchDataTask : AsyncTask<String, Void, String>() {
         private var username: String? = null
@@ -103,11 +133,16 @@ class MainActivity : AppCompatActivity() {
                 val currentDate = LocalDateTime.now()
                 val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
                 val currentDateStr = currentDate.format(formatter)
-                val intent = Intent(applicationContext, ProfileActivity::class.java)
-                intent.putExtra(ProfileActivity.EXTRA_USERNAME, username)
-                intent.putExtra(ProfileActivity.EXTRA_TOTAL_ITEMS, totalItems)
-                intent.putExtra(ProfileActivity.EXTRA_DATE_STR, currentDateStr)
-                intent.putExtra(ProfileActivity.EXTRA_RESULT, result)
+                val intent = Intent(this@MainActivity, ProfileActivity::class.java)
+
+                val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = sharedPreferences.edit()
+                editor.putString("username", username)
+                editor.putInt("totalItems", totalItems)
+                editor.putString("currentDateStr", currentDateStr)
+                editor.putString("result", result)
+                editor.apply()
+
                 startActivity(intent)
             }
 
