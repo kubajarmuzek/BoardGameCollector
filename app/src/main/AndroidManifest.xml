@@ -32,6 +32,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <meta-data
+            android:name="DATABASE_HELPER_CLASS"
+            android:value="edu.put.inf151818.DatabaseHelper" />
     </application>
 
 </manifest>

@@ -23,6 +23,16 @@ import android.content.Context
 import android.content.SharedPreferences
 import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
+import DatabaseHelper
+import android.content.ContentValues
+
+data class Game(
+    var title: String? = null,
+    var originalTitle: String? = null,
+    var year: Int? = null,
+    var bggId: Long? = null,
+    var thumbnail: String? = null
+)
 
 
 class MainActivity : AppCompatActivity() {
@@ -53,9 +63,9 @@ class MainActivity : AppCompatActivity() {
 
                 if (diffInHours < 24) {
                     textView.text = "Time difference is less than 24 hours"
-                    //val intent = Intent(this@MainActivity, ProfileActivity::class.java)
-                    //startActivity(intent)
-                    //finish() // Add this line to prevent going back to MainActivity when pressing the back button
+                    val intent = Intent(this@MainActivity, ProfileActivity::class.java)
+                    startActivity(intent)
+                    finish() // Add this line to prevent going back to MainActivity when pressing the back button
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -127,6 +137,77 @@ class MainActivity : AppCompatActivity() {
                     eventType = xmlPullParser.next()
                 }
                 totalItems = totalItems?.minus(expansionCount) ?: 0
+
+                if (username != null) {
+                    // ... Parsing XML and obtaining game information ...
+
+                    val gameList = ArrayList<Game>()
+
+                    val xmlPullParserFactory = XmlPullParserFactory.newInstance()
+                    val xmlPullParser = xmlPullParserFactory.newPullParser()
+
+                    xmlPullParser.setInput(StringReader(result))
+
+                    var eventType = xmlPullParser.eventType
+                    var currentGame: Game? = null
+
+                    while (eventType != XmlPullParser.END_DOCUMENT) {
+                        when (eventType) {
+                            XmlPullParser.START_TAG -> {
+                                when (xmlPullParser.name) {
+                                    "item" -> {
+                                        currentGame = Game()
+                                        currentGame.bggId =
+                                            xmlPullParser.getAttributeValue(null, "objectid")
+                                                ?.toLongOrNull()
+                                        currentGame.originalTitle =
+                                            xmlPullParser.getAttributeValue(null, "name")
+                                    }
+
+                                    "name" -> {
+                                        val type = xmlPullParser.getAttributeValue(null, "type")
+                                        if (type == "primary") {
+                                            currentGame?.title = xmlPullParser.nextText()
+                                        }
+                                    }
+
+                                    "yearpublished" -> {
+                                        currentGame?.year =
+                                            xmlPullParser.getAttributeValue(null, "value")
+                                                ?.toIntOrNull()
+                                    }
+
+                                    "thumbnail" -> {
+                                        currentGame?.thumbnail = xmlPullParser.nextText()
+                                    }
+                                }
+                            }
+
+                            XmlPullParser.END_TAG -> {
+                                if (xmlPullParser.name == "item") {
+                                    currentGame?.let { gameList.add(it) }
+                                }
+                            }
+                        }
+                        eventType = xmlPullParser.next()
+                    }
+
+                    // Insert data into the database
+                    val dbHelper = DatabaseHelper(applicationContext)
+                    val db = dbHelper.writableDatabase
+
+                    for (gameData in gameList) {
+                        val values = ContentValues().apply {
+                            put(DatabaseHelper.getColumnTitle(), gameData.title)
+                            put(DatabaseHelper.getColumnOriginalTitle(), gameData.originalTitle)
+                            put(DatabaseHelper.getColumnYear(), gameData.year)
+                            put(DatabaseHelper.getColumnBggId(), gameData.bggId)
+                            put(DatabaseHelper.getColumnThumbnail(), gameData.thumbnail)
+                        }
+                        db.insert(DatabaseHelper.getTableName(), null, values)
+                    }
+                    db.close()
+                }
 
 
 
