@@ -39,6 +39,12 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
             return COLUMN_THUMBNAIL
         }
     }
+    fun resetDatabase() {
+        val db = writableDatabase
+        db.delete(TABLE_NAME, null, null)
+        db.execSQL("DELETE FROM SQLITE_SEQUENCE WHERE NAME = '$TABLE_NAME'")
+        db.close()
+    }
 
     override fun onCreate(db: SQLiteDatabase) {
         // Create the table

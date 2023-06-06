@@ -41,6 +41,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var sharedPreferences: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
+        val dbHelper = DatabaseHelper(applicationContext)
+        dbHelper.resetDatabase()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -63,9 +65,9 @@ class MainActivity : AppCompatActivity() {
 
                 if (diffInHours < 24) {
                     textView.text = "Time difference is less than 24 hours"
-                    val intent = Intent(this@MainActivity, ProfileActivity::class.java)
-                    startActivity(intent)
-                    finish() // Add this line to prevent going back to MainActivity when pressing the back button
+                    //val intent = Intent(this@MainActivity, ProfileActivity::class.java)
+                    //startActivity(intent)
+                    //finish() // Add this line to prevent going back to MainActivity when pressing the back button
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -150,35 +152,57 @@ class MainActivity : AppCompatActivity() {
 
                     var eventType = xmlPullParser.eventType
                     var currentGame: Game? = null
-
+                    var currentTag: String? = null // Track the current XML tag
                     while (eventType != XmlPullParser.END_DOCUMENT) {
                         when (eventType) {
+
                             XmlPullParser.START_TAG -> {
+                                currentTag = xmlPullParser.name
                                 when (xmlPullParser.name) {
                                     "item" -> {
                                         currentGame = Game()
-                                        currentGame.bggId =
-                                            xmlPullParser.getAttributeValue(null, "objectid")
-                                                ?.toLongOrNull()
-                                        currentGame.originalTitle =
-                                            xmlPullParser.getAttributeValue(null, "name")
+                                        currentGame.bggId = xmlPullParser.getAttributeValue(null, "objectid")?.toLongOrNull()
+                                        currentGame.originalTitle = xmlPullParser.getAttributeValue(null, "name")
                                     }
 
                                     "name" -> {
-                                        val type = xmlPullParser.getAttributeValue(null, "type")
-                                        if (type == "primary") {
-                                            currentGame?.title = xmlPullParser.nextText()
+                                        if (currentGame != null) {
+                                            val sortIndex = xmlPullParser.getAttributeValue(null, "sortindex")
+                                            if (sortIndex == "1") {
+                                                currentGame.title = xmlPullParser.nextText()
+                                            }
+                                            if (sortIndex == "5") {
+                                                currentGame.title = xmlPullParser.nextText()
+                                            }
                                         }
                                     }
 
                                     "yearpublished" -> {
-                                        currentGame?.year =
-                                            xmlPullParser.getAttributeValue(null, "value")
-                                                ?.toIntOrNull()
+                                        if (currentGame != null) {
+                                            //currentGame.year = xmlPullParser.getAttributeValue(null, "value")?.toIntOrNull()
+                                        }
                                     }
 
                                     "thumbnail" -> {
                                         currentGame?.thumbnail = xmlPullParser.nextText()
+                                    }
+                                }
+                            }
+
+                            XmlPullParser.TEXT -> {
+                                val text = xmlPullParser.text?.trim()
+                                if (currentGame != null && !text.isNullOrEmpty()) {
+                                    when (currentTag) {
+                                        "name" -> {
+                                            val sortIndex = xmlPullParser.getAttributeValue(null, "sortindex")
+                                            if (sortIndex == "1") {
+                                                //currentGame.title = text
+                                            }
+                                        }
+                                        "yearpublished" -> {
+                                            currentGame.year = text.toIntOrNull()
+                                        }
+                                        // Add other cases if needed for additional tags
                                     }
                                 }
                             }
@@ -196,6 +220,7 @@ class MainActivity : AppCompatActivity() {
                     val dbHelper = DatabaseHelper(applicationContext)
                     val db = dbHelper.writableDatabase
 
+
                     for (gameData in gameList) {
                         val values = ContentValues().apply {
                             put(DatabaseHelper.getColumnTitle(), gameData.title)
@@ -206,7 +231,6 @@ class MainActivity : AppCompatActivity() {
                         }
                         db.insert(DatabaseHelper.getTableName(), null, values)
                     }
-                    db.close()
                 }
 
 
