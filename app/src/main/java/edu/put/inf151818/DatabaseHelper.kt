@@ -64,6 +64,7 @@ class DatabaseHelper(context: Context) : SQLiteOpenHelper(context, DATABASE_NAME
         // Handle database upgrades, if needed
         // This method is called when DATABASE_VERSION is incremented
     }
+
 }
 
 

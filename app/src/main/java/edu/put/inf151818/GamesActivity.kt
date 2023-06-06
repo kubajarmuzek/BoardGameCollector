@@ -2,6 +2,7 @@ package edu.put.inf151818
 
 import DatabaseHelper
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.os.Bundle
@@ -71,6 +72,12 @@ class GameListAdapter(context: Context, cursor: Cursor) : CursorAdapter(context,
             } catch (e: IOException) {
                 e.printStackTrace()
             }
+        }
+        view.setOnClickListener {
+            val gameId = cursor.getInt(columnIndexBggId)
+            val intent = Intent(context, GameDetailActivity::class.java)
+            intent.putExtra("gameId", gameId)
+            context.startActivity(intent)
         }
     }
 }
