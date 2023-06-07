@@ -1,4 +1,5 @@
 package edu.put.inf151818
+
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
@@ -16,6 +17,7 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 data class GameDetails(
+    var Id: String? = null,
     var title: String? = null,
     var description: String? = null,
     var yearPublished: String? = null,
@@ -25,6 +27,7 @@ data class GameDetails(
 )
 
 class GameDetailActivity : AppCompatActivity() {
+    private lateinit var idTextView: TextView
     private lateinit var titleTextView: TextView
     private lateinit var imageView: ImageView
     private lateinit var descriptionTextView: TextView
@@ -36,26 +39,29 @@ class GameDetailActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_game_detail)
 
+
         titleTextView = findViewById(R.id.titleTextView)
         imageView = findViewById(R.id.imageView)
         descriptionTextView = findViewById(R.id.descriptionTextView)
         yearPublishedTextView = findViewById(R.id.yearPublishedTextView)
         minPlayersTextView = findViewById(R.id.minPlayersTextView)
         maxPlayersTextView = findViewById(R.id.maxPlayersTextView)
+        idTextView = findViewById(R.id.idTextView)
 
         val intent = intent
-        val gameId = intent.getIntExtra("gameId", 0)
+        val gameId = intent.getStringExtra("gameId")
 
         retrieveGameDetails(gameId)
     }
 
-    private fun retrieveGameDetails(gameId: Int) {
+    private fun retrieveGameDetails(gameId: String?) {
         GlobalScope.launch(Dispatchers.IO) {
-            val url = "https://boardgamegeek.com/xmlapi2/thing?id=$gameId&stats=1"
+            val url = "https://boardgamegeek.com/xmlapi2/thing?id=$gameId"
 
             try {
                 val xmlStream = downloadXml(url)
                 val gameDetails = parseGameDetails(xmlStream)
+                gameDetails.Id = gameId
                 displayGameDetails(gameDetails)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -96,22 +102,28 @@ class GameDetailActivity : AppCompatActivity() {
             }
             eventType = parser.next()
         }
-
         return gameDetails
     }
 
     private suspend fun displayGameDetails(gameDetails: GameDetails) {
         withContext(Dispatchers.Main) {
-            titleTextView.text = gameDetails.title
-            descriptionTextView.text = gameDetails.description
+            titleTextView.text = "Title: " + gameDetails.title
             yearPublishedTextView.text = gameDetails.yearPublished
             minPlayersTextView.text = gameDetails.minPlayers
             maxPlayersTextView.text = gameDetails.maxPlayers
+            idTextView.text = "Game id: " + gameDetails.Id
+
+            // Extract the first three sentences from the description
+            val descriptionSentences = gameDetails.description?.split(".")
+            val truncatedDescription = descriptionSentences?.take(3)?.joinToString(". ")
+
+            descriptionTextView.text = truncatedDescription
 
             val bitmap = downloadThumbnail(gameDetails.thumbnailUrl)
             imageView.setImageBitmap(bitmap)
         }
     }
+
 
     private suspend fun downloadThumbnail(urlString: String?): Bitmap? {
         return withContext(Dispatchers.IO) {

@@ -5,6 +5,14 @@
     android:orientation="vertical">
 
     <TextView
+        android:id="@+id/idTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold"
+        android:padding="16dp" />
+
+    <TextView
         android:id="@+id/titleTextView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -17,6 +25,16 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:scaleType="centerCrop" />
+
+    <TextView
+        android:id="@+id/dTextView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:textAppearanceMedium"
+        android:textStyle="bold"
+        android:padding="16dp"
+        android:text="Description:"/>
+
 
     <TextView
         android:id="@+id/descriptionTextView"

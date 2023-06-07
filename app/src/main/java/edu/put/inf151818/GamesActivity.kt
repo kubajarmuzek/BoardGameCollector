@@ -29,30 +29,29 @@ class GameListAdapter(context: Context, cursor: Cursor) : CursorAdapter(context,
         // Inflate the layout for each list item
         return LayoutInflater.from(context).inflate(R.layout.list_item_game, parent, false)
     }
-
     override fun bindView(view: View, context: Context, cursor: Cursor) {
+        // Retrieve the game data from the cursor
+        val gameId = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnBggId()))
+        val title = cursor.getString(cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnTitle()))
+        val year = cursor.getInt(cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnYear())).toString()
+
+        // Bind the game data to the views
         val numberTextView: TextView = view.findViewById(R.id.numberTextView)
         val thumbnailImageView: ImageView = view.findViewById(R.id.thumbnailImageView)
         val titleTextView: TextView = view.findViewById(R.id.titleTextView)
         val yearTextView: TextView = view.findViewById(R.id.yearTextView)
         val descriptionTextView: TextView = view.findViewById(R.id.descriptionTextView)
-
-        val columnIndexTitle = cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnTitle())
-        val columnIndexYear = cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnYear())
-        val columnIndexBggId = cursor.getColumnIndexOrThrow(DatabaseHelper.getColumnBggId())
-
-        val title = if (columnIndexTitle != -1) cursor.getString(columnIndexTitle) else ""
-        val year = if (columnIndexYear != -1) cursor.getInt(columnIndexYear).toString() else ""
-        val bggId = if (columnIndexBggId != -1) cursor.getInt(columnIndexBggId).toString() else ""
+        //val idTextView: TextView = view.findViewById(R.id.idTextView)
 
         numberTextView.text = (cursor.position + 1).toString()
         titleTextView.text = title
         yearTextView.text = year
+        //idTextView.text = gameId
 
         // Fetch thumbnail and description from BoardGameGeek API
         GlobalScope.launch(Dispatchers.Main) {
             try {
-                val url = URL("https://www.boardgamegeek.com/xmlapi2/thing?id=$bggId&stats=1")
+                val url = URL("https://www.boardgamegeek.com/xmlapi2/thing?id=$gameId&stats=1")
                 val document = withContext(Dispatchers.IO) {
                     DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(url.openStream())
                 }
@@ -73,13 +72,15 @@ class GameListAdapter(context: Context, cursor: Cursor) : CursorAdapter(context,
                 e.printStackTrace()
             }
         }
+
+        // Set click listener to open details activity
         view.setOnClickListener {
-            val gameId = cursor.getInt(columnIndexBggId)
             val intent = Intent(context, GameDetailActivity::class.java)
             intent.putExtra("gameId", gameId)
             context.startActivity(intent)
         }
     }
+
 }
 
 class GamesActivity : AppCompatActivity() {
