@@ -25,7 +25,7 @@ import java.text.SimpleDateFormat
 import java.util.concurrent.TimeUnit
 import DatabaseHelper
 import android.content.ContentValues
-
+import ExpansionDatabaseHelper
 data class Game(
     var title: String? = null,
     var originalTitle: String? = null,
@@ -41,8 +41,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var sharedPreferences: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
+        //Tymczasowe 4 linijki
         val dbHelper = DatabaseHelper(applicationContext)
         dbHelper.resetDatabase()
+        val EdbHelper = ExpansionDatabaseHelper(applicationContext)
+        EdbHelper.resetDatabase()
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -77,10 +80,170 @@ class MainActivity : AppCompatActivity() {
         button.setOnClickListener {
             val username = editText.text.toString()
             FetchDataTask().execute(username)
+            FetchExpansionDataTask().execute(username)
         }
     }
 
+    private inner class FetchExpansionDataTask : AsyncTask<String, Void, String>() {
+        private var username: String? = null
+        private var totalItems: String? = null
+        override fun doInBackground(vararg params: String?): String {
+            username = params.getOrNull(0)
 
+            val url = URL("https://www.boardgamegeek.com/xmlapi2/collection?username=$username&subtype=boardgameexpansion&stats=1")
+            val connection = url.openConnection() as HttpURLConnection
+            connection.requestMethod = "GET"
+
+            val responseCode = connection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                val bufferedReader = BufferedReader(InputStreamReader(connection.inputStream))
+                val response = StringBuilder()
+                var line: String?
+                while (bufferedReader.readLine().also { line = it } != null) {
+                    response.append(line)
+                }
+                bufferedReader.close()
+                return response.toString()
+            } else {
+                Log.e("FetchDataTask", "Error: $responseCode")
+            }
+
+            return ""
+        }
+
+        override fun onPostExecute(result: String?) {
+            Log.d("FetchDataTask", "Response: $result")
+
+            totalItems = result ?: ""
+
+            if (username != null) {
+                val xmlPullParserFactory = XmlPullParserFactory.newInstance()
+                val xmlPullParser = xmlPullParserFactory.newPullParser()
+
+                xmlPullParser.setInput(StringReader(result))
+
+                var eventType = xmlPullParser.eventType
+                var totalItems: Int? = null
+                var expansionCount = 0
+
+                while (eventType != XmlPullParser.END_DOCUMENT) {
+                    when (eventType) {
+                        XmlPullParser.START_TAG -> {
+                            if (xmlPullParser.name == "items") {
+                                val totalItemsString = xmlPullParser.getAttributeValue(null, "totalitems")
+                                totalItems = totalItemsString?.toIntOrNull()
+                            } else if (xmlPullParser.name == "item" && xmlPullParser.getAttributeValue(null, "subtype") == "boardgameexpansion") {
+                                expansionCount++
+                            }
+                        }
+                    }
+
+                    eventType = xmlPullParser.next()
+                }
+
+                if (username != null) {
+                    // ... Parsing XML and obtaining game information ...
+
+                    val gameList = ArrayList<Game>()
+
+                    val xmlPullParserFactory = XmlPullParserFactory.newInstance()
+                    val xmlPullParser = xmlPullParserFactory.newPullParser()
+
+                    xmlPullParser.setInput(StringReader(result))
+
+                    var eventType = xmlPullParser.eventType
+                    var currentGame: Game? = null
+                    var currentTag: String? = null // Track the current XML tag
+                    while (eventType != XmlPullParser.END_DOCUMENT) {
+                        when (eventType) {
+
+                            XmlPullParser.START_TAG -> {
+                                currentTag = xmlPullParser.name
+                                when (xmlPullParser.name) {
+                                    "item" -> {
+                                        currentGame = Game()
+                                        currentGame.bggId = xmlPullParser.getAttributeValue(null, "objectid")?.toLongOrNull()
+                                        currentGame.originalTitle = xmlPullParser.getAttributeValue(null, "name")
+                                    }
+
+                                    "name" -> {
+                                        if (currentGame != null) {
+                                            val sortIndex = xmlPullParser.getAttributeValue(null, "sortindex")
+                                            if (sortIndex == "1") {
+                                                currentGame.title = xmlPullParser.nextText()
+                                            }
+                                            if (sortIndex == "5") {
+                                                currentGame.title = xmlPullParser.nextText()
+                                            }
+                                        }
+                                    }
+
+                                    "yearpublished" -> {
+                                        if (currentGame != null) {
+                                            //currentGame.year = xmlPullParser.getAttributeValue(null, "value")?.toIntOrNull()
+                                        }
+                                    }
+
+                                    "thumbnail" -> {
+                                        currentGame?.thumbnail = xmlPullParser.nextText()
+                                    }
+                                }
+                            }
+
+                            XmlPullParser.TEXT -> {
+                                val text = xmlPullParser.text?.trim()
+                                if (currentGame != null && !text.isNullOrEmpty()) {
+                                    when (currentTag) {
+                                        "name" -> {
+                                            val sortIndex = xmlPullParser.getAttributeValue(null, "sortindex")
+                                            if (sortIndex == "1") {
+                                                //currentGame.title = text
+                                            }
+                                        }
+                                        "yearpublished" -> {
+                                            currentGame.year = text.toIntOrNull()
+                                        }
+                                        // Add other cases if needed for additional tags
+                                    }
+                                }
+                            }
+
+                            XmlPullParser.END_TAG -> {
+                                if (xmlPullParser.name == "item") {
+                                    currentGame?.let { gameList.add(it) }
+                                }
+                            }
+                        }
+                        eventType = xmlPullParser.next()
+                    }
+
+                    // Insert data into the database
+                    val dbHelper = ExpansionDatabaseHelper(applicationContext)
+                    val db = dbHelper.writableDatabase
+
+
+                    for (gameData in gameList) {
+                        val values = ContentValues().apply {
+                            put(DatabaseHelper.getColumnTitle(), gameData.title)
+                            put(DatabaseHelper.getColumnOriginalTitle(), gameData.originalTitle)
+                            put(DatabaseHelper.getColumnYear(), gameData.year)
+                            put(DatabaseHelper.getColumnBggId(), gameData.bggId)
+                            put(DatabaseHelper.getColumnThumbnail(), gameData.thumbnail)
+                        }
+                        db.insert(DatabaseHelper.getTableName(), null, values)
+                    }
+                }
+                totalItems = totalItems?.minus(0) ?: 0
+
+                val sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
+                val editor = sharedPreferences.edit()
+                editor.putInt("totalExpansioins", totalItems)
+                editor.putString("result", result)
+                editor.apply()
+            }
+
+        }
+    }
 
     private inner class FetchDataTask : AsyncTask<String, Void, String>() {
         private var username: String? = null
