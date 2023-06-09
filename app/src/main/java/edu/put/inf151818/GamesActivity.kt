@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Button
 import android.widget.CursorAdapter
 import android.widget.ImageView
 import android.widget.ListView
@@ -73,6 +74,8 @@ class GameListAdapter(context: Context, cursor: Cursor) : CursorAdapter(context,
             }
         }
 
+
+
         // Set click listener to open details activity
         view.setOnClickListener {
             val intent = Intent(context, GameDetailActivity::class.java)
@@ -103,6 +106,12 @@ class GamesActivity : AppCompatActivity() {
             null,                          // Having
             null                           // Order by
         )
+
+        val nextButton: Button = findViewById(R.id.nextButton)
+        nextButton.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
 
         val listView: ListView = findViewById(R.id.gameListView)
 

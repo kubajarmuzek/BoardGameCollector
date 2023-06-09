@@ -1,8 +1,10 @@
 package edu.put.inf151818
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import android.widget.Button
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -50,7 +52,11 @@ class GameDetailActivity : AppCompatActivity() {
 
         val intent = intent
         val gameId = intent.getStringExtra("gameId")
-
+        val nextButton: Button = findViewById(R.id.nextButton)
+        nextButton.setOnClickListener {
+            val intent = Intent(this, ProfileActivity::class.java)
+            startActivity(intent)
+        }
         retrieveGameDetails(gameId)
     }
 
