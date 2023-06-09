@@ -36,7 +36,11 @@ class ProfileActivity : AppCompatActivity() {
         val games: Button = findViewById(R.id.games)
         val expansions: Button = findViewById(R.id.expansions)
 
-
+        val nextButton: Button = findViewById(R.id.nextButton)
+        nextButton.setOnClickListener {
+            val intent = Intent(this, MainActivity::class.java)
+            startActivity(intent)
+        }
 
         games.setOnClickListener {
             val intent = Intent(applicationContext, GamesActivity::class.java)
