@@ -41,11 +41,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var textView: TextView
     private lateinit var sharedPreferences: SharedPreferences
     override fun onCreate(savedInstanceState: Bundle?) {
-        //Tymczasowe 4 linijki
-        val dbHelper = DatabaseHelper(applicationContext)
-        dbHelper.resetDatabase()
-        val EdbHelper = ExpansionDatabaseHelper(applicationContext)
-        EdbHelper.resetDatabase()
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
@@ -67,10 +63,16 @@ class MainActivity : AppCompatActivity() {
                 val diffInHours = TimeUnit.MILLISECONDS.toHours(diffInMilliseconds)
 
                 if (diffInHours < 24) {
-                    textView.text = "Time difference is less than 24 hours"
-                    //val intent = Intent(this@MainActivity, ProfileActivity::class.java)
-                    //startActivity(intent)
-                    //finish() // Add this line to prevent going back to MainActivity when pressing the back button
+                    //textView.text = "Time difference is less than 24 hours"
+                    val intent = Intent(this@MainActivity, ProfileActivity::class.java)
+                    startActivity(intent)
+                    finish() // Add this line to prevent going back to MainActivity when pressing the back button
+                }
+                else {
+                    val dbHelper = DatabaseHelper(applicationContext)
+                    dbHelper.resetDatabase()
+                    val EdbHelper = ExpansionDatabaseHelper(applicationContext)
+                    EdbHelper.resetDatabase()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

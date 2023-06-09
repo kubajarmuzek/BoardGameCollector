@@ -41,8 +41,8 @@ class SynchronizationActivity : AppCompatActivity() {
             EdbHelper.resetDatabase()
             sharedPreferences = applicationContext.getSharedPreferences("MyPrefs", Context.MODE_PRIVATE)
             val username = sharedPreferences.getString("username", "")
-            FetchDataTask().execute(username)
-            FetchExpansionDataTask().execute(username)
+            aFetchDataTask().execute(username)
+            aFetchExpansionDataTask().execute(username)
         }
 
         deleteData.setOnClickListener {
@@ -56,7 +56,7 @@ class SynchronizationActivity : AppCompatActivity() {
 
     }
 
-    private inner class FetchExpansionDataTask : AsyncTask<String, Void, String>() {
+    private inner class aFetchExpansionDataTask : AsyncTask<String, Void, String>() {
         private var username: String? = null
         private var totalItems: String? = null
         override fun doInBackground(vararg params: String?): String {
@@ -217,7 +217,7 @@ class SynchronizationActivity : AppCompatActivity() {
         }
     }
 
-    private inner class FetchDataTask : AsyncTask<String, Void, String>() {
+    private inner class aFetchDataTask : AsyncTask<String, Void, String>() {
         private var username: String? = null
         private var totalItems: String? = null
         override fun doInBackground(vararg params: String?): String {
