@@ -16,6 +16,9 @@
         android:theme="@style/Theme.BoardGameCollector"
         tools:targetApi="31">
         <activity
+            android:name=".SynchronizationActivity"
+            android:exported="false" />
+        <activity
             android:name=".GameDetailActivity"
             android:exported="false" />
         <activity

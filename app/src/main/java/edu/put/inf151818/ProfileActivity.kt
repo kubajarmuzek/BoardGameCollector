@@ -42,6 +42,12 @@ class ProfileActivity : AppCompatActivity() {
             startActivity(intent)
         }
 
+        val syncButton: Button = findViewById(R.id.syncButton)
+        syncButton.setOnClickListener {
+            val intent = Intent(this, SynchronizationActivity::class.java)
+            startActivity(intent)
+        }
+
         games.setOnClickListener {
             val intent = Intent(applicationContext, GamesActivity::class.java)
             startActivity(intent)
